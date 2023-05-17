@@ -3,9 +3,9 @@ const brypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 /* 
-@route POST /api/user/login
-@desc Логин
-@access Public
+* @route POST /api/user/login
+* @desc Логин
+* @access Public
 */
 
 const login = async (req, res) => {
@@ -38,11 +38,48 @@ const login = async (req, res) => {
     }
 }
 
-const register = (req, res) => {
-    res.send('register');
+/* 
+* @route POST /api/user/register
+* @desc Регистрация
+* @access Public
+*/
+
+const register = async (req, res) => {
+    const { email, password, name} = req.body;
+
+    if (!email && !password && !name) {
+        return res.send(400).json({
+            message: 'Пожалуйста, заполните обязательные поля'
+        })
+    }
+
+    const registeredUser = await prisma.user.findFirst({
+        where: {
+            email
+        }
+    });
+
+    if (registeredUser) {
+        return res.status(400).json({
+            message: 'Пользователь с таким email уже существует'
+        })
+    }
+
+    const salt = await brypt.genSalt(10); // добавляем к хешу строку усиливаем
+    const hashedPassword = await brypt.hash(password, salt);
+
+    const user = await prisma.user.create({
+        data: {
+            email,
+            name,
+            hashedPassword
+        }
+    });
+
+    
 }
 
-const current = (req, res) => {
+const current = async (req, res) => {
     res.send('current');
 }
 
